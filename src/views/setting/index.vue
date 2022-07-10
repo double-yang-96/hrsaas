@@ -6,7 +6,11 @@
           <el-tab-pane label="角色管理">
             <!-- 左侧内容 -->
             <el-row style="height: 60px"
-              ><el-button type="primary" icon="el-icon-plus" size="small"
+              ><el-button
+                type="primary"
+                icon="el-icon-plus"
+                size="small"
+                @click="showDialog = true"
                 >新增角色</el-button
               ></el-row
             >
@@ -32,7 +36,12 @@
                 <!-- 作用域插槽 -->
                 <template slot-scope="{ row }">
                   <el-button type="success" size="small">分配权限</el-button>
-                  <el-button type="primary" size="small">编辑</el-button>
+                  <el-button
+                    type="primary"
+                    size="small"
+                    @click="editRole(row.id)"
+                    >编辑</el-button
+                  >
                   <el-button
                     type="danger"
                     size="small"
@@ -108,12 +117,41 @@
         </el-tabs>
       </el-card>
     </div>
+    <!-- 放置一个弹层组件 -->
+    <el-dialog title="编辑部门" :visible="showDialog" @close="btnCancel">
+      <el-form
+        ref="roleForm"
+        :model="roleForm"
+        :rules="rules"
+        label-width="120px"
+      >
+        <el-form-item prop="name" label="角色名称">
+          <el-input v-model="roleForm.name"></el-input>
+        </el-form-item>
+        <el-form-item label="角色描述">
+          <el-input v-model="roleForm.description"></el-input>
+        </el-form-item>
+      </el-form>
+      <!-- 放置footer插槽 -->
+      <el-row type="flex" justify="center">
+        <el-col :span="8">
+          <el-button size="small" @click="btnCancel">取消</el-button>
+          <el-button type="primary" size="small" @click="btnOK">确定</el-button>
+        </el-col>
+      </el-row>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { getRoleList, getCompanyInfo, deleteRole } from "@/api/setting";
-import { tsThisType } from "@babel/types";
+import {
+  getRoleList,
+  getCompanyInfo,
+  deleteRole,
+  getRoleDetail,
+  updateRole,
+  addRole,
+} from "@/api/setting";
 import { mapGetters } from "vuex";
 
 export default {
@@ -126,8 +164,18 @@ export default {
         pagesize: 10,
         total: 0, // 记录总数
       },
-      FormData: {
+      formData: {
         // 公司信息
+      },
+      showDialog: false,
+      roleForm: {
+        name: "",
+        description: "",
+      },
+      rules: {
+        name: [
+          { required: true, message: "角色名称不能为空", trigger: "blur" },
+        ],
       },
     };
   },
@@ -159,6 +207,45 @@ export default {
         await deleteRole(id); // 调用删除接口
         this.getRoleList(); // 重新加载数据
         this.$message("删除成功");
+      } catch (err) {
+        console.log(err);
+      }
+    },
+    async editRole(id) {
+      this.roleForm = await getRoleDetail(id); // 先实现数据的回写
+      console.log(this.roleForm);
+      // 显示弹层
+      this.showDialog = true;
+    },
+    btnCancel() {
+      this.roleForm = {
+        name: "",
+        description: "",
+      };
+      // 移除校验规则
+      this.$refs.roleForm.resetFields();
+      this.showDialog = false;
+    },
+    async btnOK() {
+      try {
+        console.log(this.roleForm);
+        await this.$refs.roleForm.validate();
+        console.log(1);
+        // 校验通过 执行await下方内容
+        // roleForm 如果有id就是编辑 没有id就是新增
+        if (this.roleForm.id) {
+          await updateRole(this.roleForm);
+        } else {
+          // 新增角色
+          console.log(2);
+          await addRole(this.roleForm);
+          console.log(3);
+        }
+
+        // 重新拉取数据
+        this.getRoleList();
+        this.$message("操作成功");
+        this.showDialog = false;
       } catch (err) {
         console.log(err);
       }

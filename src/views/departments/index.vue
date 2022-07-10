@@ -12,7 +12,7 @@
         <el-tree
           :data="departs"
           :props="defaultProps"
-          :default-expand-all="true"
+          :default-expand-all="false"
         >
           <!-- 传入内容 插槽内容-->
           <tree-tools
@@ -62,7 +62,7 @@ export default {
   methods: {
     async getDepartments() {
       const result = await getDepartments();
-      console.log(result);
+      // console.log(result);
       this.company = { name: result.companyName, manager: "负责人", id: "" };
       this.departs = transListToTreeData(result.depts, "");
     },
