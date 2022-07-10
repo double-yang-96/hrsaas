@@ -36,6 +36,12 @@
                 <!-- 作用域插槽 -->
                 <template slot-scope="{ row }">
                   <el-button type="success" size="small">分配权限</el-button>
+                  <!-- <el-button
+                    type="success"
+                    size="small"
+                    @click="assignPerm(row.id)"
+                    >分配权限</el-button
+                  > -->
                   <el-button
                     type="primary"
                     size="small"
@@ -140,6 +146,32 @@
         </el-col>
       </el-row>
     </el-dialog>
+    <!-- 放置分配权限弹层 -->
+    <el-dialog
+      title="分配权限"
+      :visible="showPermDialog"
+      @close="btnPermCancel"
+    >
+      <!-- 权限是一棵树 -->
+      <el-tree
+        :data="permData"
+        :props="defaultProps"
+        :default-expand-all="true"
+        show-checkbox="true"
+        check-strictly="true"
+        node-key="id"
+        :default-checked-keys="selectCheck"
+        ref="permTree"
+      ></el-tree>
+      <el-row slot="footer" type="flex" justify="center">
+        <el-col :span="6">
+          <el-button type="primary" size="small" @click="btnPermOK"
+            >确认</el-button
+          >
+          <el-button size="small" @click="btnPermCancel">取消</el-button>
+        </el-col>
+      </el-row>
+    </el-dialog>
   </div>
 </template>
 
@@ -153,7 +185,8 @@ import {
   addRole,
 } from "@/api/setting";
 import { mapGetters } from "vuex";
-
+import { getPermissionList, assignPerm } from "@/api/permission";
+import { transListToTreeData } from "@/utils";
 export default {
   data() {
     return {
@@ -167,7 +200,14 @@ export default {
       formData: {
         // 公司信息
       },
-      showDialog: false,
+      showDialog: false, // 控制新增编辑弹层显示
+      showPermDialog: false, // 控制分配权限弹层显示
+      permData: [], // 接受权限数据
+      defaultProps: {
+        label: "name",
+      }, // 定义显示字段的名称 和子属性的字段名称
+      roleId: null, // 用来记录当前分配权限的id
+      selectCheck: [],
       roleForm: {
         name: "",
         description: "",
@@ -249,6 +289,26 @@ export default {
       } catch (err) {
         console.log(err);
       }
+    },
+    async assignPerm(id) {
+      this.permData = transListToTreeData(await getPermissionList(), "0");
+      this.roleId = id;
+      const { permIds } = await getRoleDetail(id);
+      this.selectCheck = permIds; // 将当前角色拥有的id赋值
+      this.showPermDialog = true;
+    },
+    async btnPermOK() {
+      // 调用el-tree方法
+      assignPerm({
+        permIds: this.$refs.permTree.getCheckedKeys(),
+        id: this.roleId,
+      });
+      this.$message.success("分配权限成功");
+      this.showPermDialog = false;
+    },
+    btnPermCancel() {
+      this.selectCheck = []; // 重置数据
+      this.showPermDialog = false;
     },
   },
 };

@@ -79,7 +79,9 @@
             <el-button type="text" size="small">转正</el-button>
             <el-button type="text" size="small">调岗</el-button>
             <el-button type="text" size="small">离职</el-button>
-            <el-button type="text" size="small">角色</el-button>
+            <el-button type="text" size="small" @click="editRole(row.id)"
+              >角色</el-button
+            >
             <el-button type="text" size="small" @click="delEmployee(row.id)"
               >删除</el-button
             >
@@ -96,6 +98,7 @@
         />
       </el-row>
     </div>
+    <!-- 放置组件弹层 -->
     <!-- sync修饰符 是 子组件去改变父组件的一个语法糖 -->
     <add-employee :show-dialog.sync="showDialog"></add-employee>
     <el-dialog title="二维码" :visible.sync="showCodeDialog">
@@ -103,12 +106,19 @@
         <canvas ref="myCanvas"></canvas>
       </el-row>
     </el-dialog>
+    <!-- 放置权限分配组件 -->
+    <assign-role
+      ref="assignRole"
+      :show-role-dialog.sync="showRoleDialog"
+      :userId="userId"
+    ></assign-role>
   </div>
 </template>
 
 <script>
 import { getEmployeeList, delEmployee } from "@/api/employees";
 import AddEmployee from "./components/add-employee";
+import AssignRole from "./components/assign-role"; // 引入用户权限组件
 import EmployeeEnum from "@/api/constant/employees"; // 引入员工的枚举对象
 import { formatDate } from "@/filters";
 import QrCode from "qrcode";
@@ -124,10 +134,13 @@ export default {
       loading: false, // 显示遮罩层
       showDialog: false,
       showCodeDialog: false, // 显示二维码弹层
+      showRoleDialog: false, // 显示分配角色弹层
+      userId: null,
     };
   },
   components: {
     AddEmployee,
+    AssignRole,
   },
   created() {
     this.getEmployeeList();
@@ -225,6 +238,11 @@ export default {
       } else {
         this.$message.warning("该用户还未上传头像");
       }
+    },
+    async editRole(id) {
+      this.userId = id;
+      await this.$refs.assignRole.getUserDetailById(id); // 调用子组件方法
+      this.showRoleDialog = true;
     },
   },
 };
