@@ -4,11 +4,11 @@
 </template>
 
 <script>
-var echarts = require("echarts");
-// var echarts = require("echarts/lib/echarts"); // 引入echarts主模块
-// require("echarts/lib/chart/radar");
-// require("echarts/lib/component/tooltip");
-// require("echarts/lib/component/title");
+// var echarts = require("echarts");
+var echarts = require("echarts/lib/echarts"); // 引入echarts主模块
+require("echarts/lib/chart/radar");
+require("echarts/lib/component/tooltip");
+require("echarts/lib/component/title");
 export default {
   mounted() {
     const myChart = echarts.init(this.$refs.myDiv);
